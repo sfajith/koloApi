@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////
+// ENUMS
+//////////////////////
+
+enum Role {
+  ADMIN
+  OWNER
+  AGENT
+}
+
+enum ConversationStatus {
+  PENDING
+  ACTIVE
+  CLOSED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+}
+
+enum OrderStatus {
+  CREATED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+//////////////////////
+// BUSINESS
+//////////////////////
+
+model Business {
+  id      String @id @default(uuid())
+  name    String
+  ownerId String
+
+  users         User[]
+  customers     Customer[]
+  conversations Conversation[]
+  orders        Order[]
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// USER
+//////////////////////
+
+model User {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+
+  name     String
+  lastName String
+  phone    String
+  email    String @unique
+  password String
+
+  role Role @default(AGENT)
+
+  createdAt DateTime @default(now())
+
+  conversations Conversation[] @relation("AssignedConversations")
+  orders        Order[]
+}
+
+//////////////////////
+// CUSTOMER
+//////////////////////
+
+model Customer {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+
+  name  String?
+  phone String
+  email String?
+
+  lastPurchaseAt    DateTime?
+  nextRemarketingAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  conversations Conversation[]
+  orders        Order[]
+
+  @@unique([businessId, phone])
+}
+
+//////////////////////
+// CONVERSATION
+//////////////////////
+
+model Conversation {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  assignedUserId String?
+  assignedUser   User?   @relation("AssignedConversations", fields: [assignedUserId], references: [id])
+
+  status ConversationStatus @default(PENDING)
+
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  messages Message[]
+  orders   Order[]
+
+  @@index([businessId, status])
+}
+
+//////////////////////
+// MESSAGE
+//////////////////////
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  direction MessageDirection
+  type      MessageType
+  content   String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+//////////////////////
+// ORDER
+//////////////////////
+
+model Order {
+  id         String   @id @default(uuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  agentId String
+  agent   User   @relation(fields: [agentId], references: [id])
+
+  totalAmount Float
+
+  status OrderStatus @default(CREATED)
+
+  createdAt DateTime @default(now())
+
+  items OrderItem[]
+
+  @@index([businessId, status])
+}
+
+//////////////////////
+// ORDER ITEM
+//////////////////////
+
+model OrderItem {
+  id      String @id @default(uuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  name     String
+  quantity Int
+  price    Float
+  notes    String?
+}
