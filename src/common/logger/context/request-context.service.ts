@@ -1,21 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { createNamespace } from 'cls-hooked';
-
-const NAMESPACE = 'request';
+import { AsyncLocalStorage } from 'async_hooks';
 
 @Injectable()
 export class RequestContextService {
-  private readonly namespace = createNamespace(NAMESPACE);
+  private readonly storage = new AsyncLocalStorage<Map<string, any>>();
 
-  run(callback: () => void) {
-    this.namespace.run(callback);
-  }
+run<T>(callback: () => T): T {
+  return this.storage.run(new Map(), callback);
+}
 
   set(key: string, value: any) {
-    this.namespace.set(key, value);
+    const store = this.storage.getStore();
+    if (store) {
+      store.set(key, value);
+    }
   }
 
-  get<T>(key: string): T {
-    return this.namespace.get(key);
+  get<T = any>(key: string): T | undefined {
+    const store = this.storage.getStore();
+    return store?.get(key);
   }
 }

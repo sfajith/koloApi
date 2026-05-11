@@ -4,7 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module';
 import { GlobalExceptionFilter } from '../../src/common/filters/global-exception.filter';
 
-describe('Auth - Register (e2e)', () => {
+describe('Auth (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -56,5 +56,37 @@ describe('Auth - Register (e2e)', () => {
     expect(res.status).toBe(409);
     expect(res.body.success).toBe(false);
     expect(res.body.error).toBe('CONFLICT');
+  });
+
+  //Test login
+
+  it('should login a user', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'test@gmail.com',
+      password: '123456',
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('Should fail if password does not match', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'test@gmail.com',
+      password: '1234567',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('Should fail if email does not exist', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/login').send({
+      email: 'test@example.com',
+      password: '123456',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 });

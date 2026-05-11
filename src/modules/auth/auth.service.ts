@@ -1,18 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { loginDto } from './dto/login.dto';
 import { registerDto } from './dto/register.dto';
-import bcrypt from 'bcrypt';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { LoggerService } from 'src/common/logger/logger.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PasswordService } from 'src/common/security/password.service';
+import { TokenService } from 'src/common/security/token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private logger: LoggerService,
     private prisma: PrismaService,
+    private tokenService: TokenService,
+    private passwordService: PasswordService,
   ) {}
-  login({ email, password }: loginDto) {
-    return { email, password };
+  async login({ email, password }: loginDto) {
+    this.logger.log(
+      {
+        event: 'login_attempt',
+        email,
+        timestamp: new Date().toISOString(),
+      },
+      'AuthService',
+    );
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        password: true,
+        role: true,
+        businessId: true,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    const isPasswordValid = await this.passwordService.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    const payload = {
+     sub: user.id,
+     businessId: user.businessId,
+     role: user.role,
+    };
+
+    const accessToken = await this.tokenService.sign(payload);
+
+    this.logger.log(
+      {
+        event: 'login_success',
+        email,
+        timestamp: new Date().toISOString(),
+      },
+      'AuthService',
+    );
+
+    return {
+      success: true,
+      message: 'Login successful',
+      data: {
+        userId: user.id,
+        role: user.role,
+        accessToken,
+      },
+    };
   }
 
   async register({
@@ -31,7 +87,7 @@ export class AuthService {
       },
       'AuthService',
     );
-    const hashedPassword: string = await bcrypt.hash(password, 10);
+    const hashedPassword: string = await this.passwordService.hash(password);
     await this.prisma.$transaction(async (tx) => {
       const business = await tx.business.create({
         data: {
