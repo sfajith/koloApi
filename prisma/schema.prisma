@@ -81,6 +81,7 @@ model User {
 
   conversations Conversation[] @relation("AssignedConversations")
   orders        Order[]
+  messages      Message[]
 }
 
 //////////////////////
@@ -138,17 +139,20 @@ model Conversation {
 //////////////////////
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
+
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  direction MessageDirection
-  type      MessageType
-  content   String
+  senderId       String
+  sender         User @relation(fields: [senderId], references: [id])
 
-  createdAt DateTime @default(now())
+  content        String
 
-  @@index([conversationId, createdAt])
+  type           MessageType
+  direction      MessageDirection
+
+  createdAt      DateTime @default(now())
 }
 
 //////////////////////

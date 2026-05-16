@@ -9,6 +9,7 @@ import { BusinessService } from './modules/business/business.service';
 import { BusinessModule } from './modules/business/business.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { ConversationsModule } from './modules/conversations/conversations.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LoggerModule } from './common/logger/logger.module';
     BusinessModule,
     PrismaModule,
     LoggerModule,
+    ConversationsModule,
   ],
   controllers: [],
   providers: [UsersService, BusinessService],

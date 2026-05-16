@@ -19,7 +19,6 @@ export class AuthService {
       {
         event: 'login_attempt',
         email,
-        timestamp: new Date().toISOString(),
       },
       'AuthService',
     );
@@ -30,6 +29,7 @@ export class AuthService {
         password: true,
         role: true,
         businessId: true,
+        email: true,
       },
     });
 
@@ -47,6 +47,7 @@ export class AuthService {
      sub: user.id,
      businessId: user.businessId,
      role: user.role,
+     email: user.email,
     };
 
     const accessToken = await this.tokenService.sign(payload);
@@ -55,7 +56,6 @@ export class AuthService {
       {
         event: 'login_success',
         email,
-        timestamp: new Date().toISOString(),
       },
       'AuthService',
     );
@@ -83,7 +83,6 @@ export class AuthService {
       {
         event: 'register_attempt',
         email,
-        timestamp: new Date().toISOString(),
       },
       'AuthService',
     );
@@ -120,7 +119,6 @@ export class AuthService {
       {
         event: 'user_registered_successfully',
         email,
-        timestamp: new Date().toISOString(),
       },
       'AuthService',
     );

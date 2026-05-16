@@ -21,7 +21,7 @@ export class RolesGuard implements CanActivate {
           context.getClass(),
         ],
       );
-
+      
     if (!requiredRoles) {
       return true;
     }
@@ -46,7 +46,6 @@ export class RolesGuard implements CanActivate {
         'Insufficient permissions',
       );
     }
-
     return true;
   }
 }
