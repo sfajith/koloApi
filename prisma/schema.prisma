@@ -33,6 +33,9 @@ enum MessageType {
   IMAGE
   AUDIO
   VIDEO
+  DOCUMENT
+  LOCATION
+  STICKER
 }
 
 enum OrderStatus {
@@ -41,6 +44,19 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum Channel {
+  WHATSAPP
+  INSTAGRAM
+  MESSENGER
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
 
 //////////////////////
@@ -57,7 +73,33 @@ model Business {
   conversations Conversation[]
   orders        Order[]
 
+  channels ChannelConnection[]
+
   createdAt DateTime @default(now())
+}
+
+//////////////////////
+// CHANNELCONNECTION
+/////////////////////
+
+model ChannelConnection {
+  id String @id @default(uuid())
+
+  businessId String
+
+  provider Channel
+
+  externalAccountId String
+
+  accessToken String?
+
+  metadata Json?
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, externalAccountId])
 }
 
 //////////////////////
@@ -89,12 +131,13 @@ model User {
 //////////////////////
 
 model Customer {
-  id         String   @id @default(uuid())
+  id         String @id @default(uuid())
   businessId String
-  business   Business @relation(fields: [businessId], references: [id])
+
+  business Business @relation(fields: [businessId], references: [id])
 
   name  String?
-  phone String
+  phone String?
   email String?
 
   lastPurchaseAt    DateTime?
@@ -105,7 +148,31 @@ model Customer {
   conversations Conversation[]
   orders        Order[]
 
-  @@unique([businessId, phone])
+  identities CustomerIdentity[]
+}
+
+//////////////////////
+//CUSTOMERIDENTITY
+//////////////////////
+
+model CustomerIdentity {
+  id String @id @default(uuid())
+
+  customerId String
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  provider Channel
+
+  externalUserId String
+
+  username String?
+
+  phone String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, externalUserId])
 }
 
 //////////////////////
@@ -123,7 +190,8 @@ model Conversation {
   assignedUserId String?
   assignedUser   User?   @relation("AssignedConversations", fields: [assignedUserId], references: [id])
 
-  status ConversationStatus @default(PENDING)
+  status  ConversationStatus @default(PENDING)
+  channel Channel
 
   lastMessageAt DateTime?
   createdAt     DateTime  @default(now())
@@ -139,20 +207,29 @@ model Conversation {
 //////////////////////
 
 model Message {
-  id             String   @id @default(uuid())
+  id String @id @default(uuid())
 
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  senderId       String
-  sender         User @relation(fields: [senderId], references: [id])
+  senderId String?
+  sender   User?   @relation(fields: [senderId], references: [id])
 
-  content        String
+  externalMessageId String? @unique
 
-  type           MessageType
-  direction      MessageDirection
+  content String?
 
-  createdAt      DateTime @default(now())
+  type MessageType
+
+  mediaUrl String?
+  mimeType String?
+  filename String?
+
+  direction MessageDirection
+
+  status MessageStatus @default(SENT)
+
+  createdAt DateTime @default(now())
 }
 
 //////////////////////

@@ -5,6 +5,10 @@ import { AppModule } from '../../src/app.module';
 import { GlobalExceptionFilter } from '../../src/common/filters/global-exception.filter';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ValidationPipe } from '@nestjs/common';
+import {
+  Channel,
+  ConversationStatus,
+} from '@prisma/client';
 
 describe('Conversations (e2e)', () => {
   let app: INestApplication;
@@ -74,12 +78,15 @@ beforeAll(async () => {
   });
 
   const conversation = await prisma.conversation.create({
-    data: {
-      businessId,
-      customerId: customer.id,
-      status: 'ACTIVE'
-    },
-  });
+  data: {
+    businessId,
+    customerId: customer.id,
+
+    status: ConversationStatus.ACTIVE,
+
+    channel: Channel.WHATSAPP,
+  },
+});
 
   conversationId = conversation.id;
 

@@ -10,6 +10,7 @@ import { BusinessModule } from './modules/business/business.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
+import { MessagingModule } from './modules/messaging/messaging.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
     PrismaModule,
     LoggerModule,
     ConversationsModule,
+    MessagingModule,
   ],
   controllers: [],
   providers: [UsersService, BusinessService],
